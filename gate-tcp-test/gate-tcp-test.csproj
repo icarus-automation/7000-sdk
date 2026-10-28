@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- card_7k.dll is 32-bit only, so the app must run as an x86 process. -->
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <PlatformTarget>x86</PlatformTarget>
+    <!-- Bundle the x86 .NET runtime into bin\, so no separate x86 runtime install is needed. -->
+    <SelfContained>true</SelfContained>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- card_7k.dll, common.dll, adapt_for_imports.dll and the Visual C++ 14.51 runtime they were built with.
+         ucrtbase.dll and api-ms-win-*.dll are skipped: Windows 10/11 always uses its own copies. -->
+    <None Include="..\sdk\*.dll" Exclude="..\sdk\ucrtbase.dll;..\sdk\api-ms-win-*.dll"
+          Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- config.ini and config\*.ini ship next to the vendor DLLs, so keep them there. -->
+    <None Include="..\sdk\**\*.ini"
+          Link="%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
