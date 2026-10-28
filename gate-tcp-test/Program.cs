@@ -1,4 +1,5 @@
 // gate-tcp-test: hosts the card_7k.dll TCP server for the RFID7000 gate and logs every callback.
+// With a gate-bridge.json next to the exe it also sends every tag to the anti-theft server (see GateBridge.cs).
 // API source of truth: ..\hax_7k_adapt.h (32-bit only, #pragma pack(1), default cdecl calling convention).
 using System.Net;
 using System.Net.NetworkInformation;
@@ -106,6 +107,7 @@ static class Program
     static readonly Dictionary<string, string> Seen = new(); // connID -> "connected" / "disconnected"
     static string? lastConnId;
     static bool logFileFailed;
+    static AlarmBridge? bridge; // null = log-only, no gate-bridge.json or no serverUrl
 
     static int Main(string[] args)
     {
@@ -118,6 +120,7 @@ static class Program
         }
 
         Log($"gate-tcp-test starting, {(Environment.Is64BitProcess ? 64 : 32)}-bit process, log file {LogPath}");
+        StartBridge();
         if (!LoadSdk())
         {
             PauseIfInteractive();
@@ -175,6 +178,7 @@ static class Program
                     }
                     break;
                 case 'Q':
+                    bridge?.Stop(TimeSpan.FromSeconds(3));
                     Native.stop_auto_read();
                     Log("stop_auto_read called, closing the server (the DLL can take up to about 10 s)...");
                     Native.close_tcp_server();
@@ -227,10 +231,29 @@ static class Program
             for (int i = 0; i < count; i++)
             {
                 EpcId e = data.Epc[i];
-                Log($"  EPC {i + 1}/{count}: {Convert.ToHexString(e.Id)}  (len={e.Len} pc={e.Pc:X4} crc={e.Crc:X4})");
+                string epc = Convert.ToHexString(e.Id);
+                Log($"  EPC {i + 1}/{count}: {epc}  (len={e.Len} pc={e.Pc:X4} crc={e.Crc:X4})");
+                bridge?.Offer(id, epc); // never blocks: cooldown check + queue write, the HTTP POST happens on the worker
             }
         }
         catch (Exception ex) { Log($"ERROR in output_tags: {ex}"); }
+    }
+
+    // Reads gate-bridge.json from next to the exe. Any problem leaves bridge null, so the app stays a log-only test.
+    static void StartBridge()
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, BridgeConfig.FileName);
+        BridgeConfig config = BridgeConfig.Load(path, problem => Log($"WARNING: {problem}"));
+        if (config.AlarmUrl == null)
+        {
+            Log($"WARNING: alarms are NOT sent to the server, this run only logs tags. To send them, copy " +
+                $"gate-bridge.example.json to {BridgeConfig.FileName} in the gate-tcp-test folder, set serverUrl, and run 'dotnet build' again.");
+            return;
+        }
+        string names = string.Join(", ", config.Gates.Select(g => $"{g.Key}={g.Value}"));
+        Log($"BRIDGE      sending tags to {config.AlarmUrl}, cooldown {config.Cooldown.TotalSeconds:0} s, " +
+            $"gate names: {(names.Length > 0 ? names : "none")} (other gates use their IP)");
+        bridge = new AlarmBridge(config, Log);
     }
 
     // B0 / B1: attempt to change the gate's beep setting through the documented config API.

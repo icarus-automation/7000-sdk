@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>GateTcpTest.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The app is a 32-bit exe (card_7k.dll is x86 only) and cannot be loaded into the 64-bit test host,
+         so the tests compile its DLL-free bridge code directly instead of referencing the project. -->
+    <Compile Include="..\gate-tcp-test\GateBridge.cs" Link="GateBridge.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Kestrel, for the fake alarm server. Part of the .NET 8 install, nothing to download. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

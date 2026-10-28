@@ -1,0 +1,7 @@
+# Build output
+bin/
+obj/
+
+# Logs (test.log from gate-tcp-test, log/card_7k.log from card_7k.dll)
+*.log
+log/

@@ -1,0 +1,7 @@
+{
+  "serverUrl": "http://localhost:8000",
+  "cooldownSeconds": 30,
+  "gates": {
+    "169.254.68.93": "GATE-1"
+  }
+}

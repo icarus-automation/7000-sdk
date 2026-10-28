@@ -20,6 +20,8 @@
     <!-- config.ini and config\*.ini ship next to the vendor DLLs, so keep them there. -->
     <None Include="..\sdk\**\*.ini"
           Link="%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Bridge settings, read from next to the exe. gate-bridge.json is yours to create from the example. -->
+    <None Update="gate-bridge.json;gate-bridge.example.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
